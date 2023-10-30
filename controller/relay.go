@@ -203,7 +203,23 @@ func Relay(c *gin.Context) {
 			retryTimes = common.RetryTimes
 		}
 		if retryTimes > 0 {
+			if retryTimes == 1 {
+				channelId := c.GetInt("channel_id")
+				common.LogError(c.Request.Context(), fmt.Sprintf("relay error (channel #%d): %s", channelId, err.Message))
+				if shouldDisableChannel(&err.OpenAIError, err.StatusCode) {
+					channelId := c.GetInt("channel_id")
+					channelName := c.GetString("channel_name")
+					disableChannelNoEmail(channelId, channelName)
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
+					enableChannel(channelId, channelName)
+				else {
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
+				}
+		}
+			}
+			else {
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
+		}
 		} else {
 			if err.StatusCode == http.StatusTooManyRequests {
 				err.OpenAIError.Message = "当前分组上游负载已饱和，请稍后再试"

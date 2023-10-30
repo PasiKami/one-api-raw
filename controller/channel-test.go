@@ -150,6 +150,21 @@ func disableChannel(channelId int, channelName string, reason string) {
 		common.SysError(fmt.Sprintf("failed to send email: %s", err.Error()))
 	}
 }
+// disable & notify
+func disableChannelNoEmail(channelId int, channelName string) {
+	if common.RootUserEmail == "" {
+		common.RootUserEmail = model.GetRootUserEmail()
+	}
+	model.UpdateChannelStatusById(channelId, common.ChannelStatusAutoDisabled)
+}
+
+// enable
+func enableChannel(channelId int, channelName string) {
+	if common.RootUserEmail == "" {
+		common.RootUserEmail = model.GetRootUserEmail()
+	}
+	model.UpdateChannelStatusById(channelId, common.ChannelStatusEnabled)
+}
 
 func testAllChannels(notify bool) error {
 	if common.RootUserEmail == "" {
