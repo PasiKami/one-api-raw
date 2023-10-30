@@ -212,13 +212,10 @@ func Relay(c *gin.Context) {
 					disableChannelNoEmail(channelId, channelName)
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 					enableChannel(channelId, channelName)
-				}
-				else {
+				} else {
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 				}
-		}
-
-			else {
+		} else {
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 		}
 		} else {
