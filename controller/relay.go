@@ -203,9 +203,6 @@ func Relay(c *gin.Context) {
 			retryTimes = common.RetryTimes
 		}
 		if retryTimes > 0 {
-			if retryTimes == 1 {
-				disableChannel(c.GetInt("channel_id"), c.GetString("channel_name"), err.Message)
-			}
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 		} else {
 			if err.StatusCode == http.StatusTooManyRequests {
