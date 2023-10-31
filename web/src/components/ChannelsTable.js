@@ -578,7 +578,7 @@ const ChannelsTable = () => {
                   确认删除
                 </Button>
               </Popup>
-              <Pagination
+              {/* <Pagination
                 floated='right'
                 activePage={activePage}
                 onPageChange={onPaginationChange}
@@ -588,7 +588,7 @@ const ChannelsTable = () => {
                   Math.ceil(channels.length / ITEMS_PER_PAGE) +
                   (channels.length % ITEMS_PER_PAGE === 0 ? 1 : 0)
                 }
-              />
+              /> */}
               <Button size='small' onClick={refresh} loading={loading}>刷新</Button>
 
             </Table.HeaderCell>
