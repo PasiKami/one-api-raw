@@ -387,6 +387,14 @@ const ChannelsTable = () => {
                 sortChannel('balance');
               }}
             >
+              已使用
+            </Table.HeaderCell>
+            <Table.HeaderCell
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                sortChannel('balance');
+              }}
+            >
               余额
             </Table.HeaderCell>
             <Table.HeaderCell
