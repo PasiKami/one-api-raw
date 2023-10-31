@@ -382,10 +382,11 @@ const ChannelsTable = () => {
               响应时间
             </Table.HeaderCell>
             <Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                sortChannel('balance');
-              }}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  sortChannel('used_quota');
+                }}
+                width={1}
             >
               已使用
             </Table.HeaderCell>
