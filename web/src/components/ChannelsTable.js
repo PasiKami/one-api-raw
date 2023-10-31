@@ -371,7 +371,6 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('type');
               }}
-              width={2}
             >
               类型
             </Table.HeaderCell>
@@ -380,7 +379,6 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('status');
               }}
-              width={2}
             >
               状态
             </Table.HeaderCell>
