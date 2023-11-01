@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { API, setPromptShown, shouldShowPrompt, showError, showInfo, showSuccess, timestamp2string } from '../helpers';
 
 import { CHANNEL_OPTIONS, ITEMS_PER_PAGE } from '../constants';
-import { renderGroup, renderNumber } from '../helpers/render';
+import {renderGroup, renderNumber, renderQuota} from '../helpers/render';
 
 function renderTimestamp(timestamp) {
   return (
@@ -55,17 +55,18 @@ const ChannelsTable = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searching, setSearching] = useState(false);
   const [updatingBalance, setUpdatingBalance] = useState(false);
+  const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [showPrompt, setShowPrompt] = useState(shouldShowPrompt("channel-test"));
 
   const loadChannels = async (startIdx) => {
-    const res = await API.get(`/api/channel/?p=${startIdx}`);
+    const res = await API.get(`/api/channel/?p=${startIdx}&page_size=${pageSize}`);
     const { success, message, data } = res.data;
     if (success) {
       if (startIdx === 0) {
         setChannels(data);
       } else {
         let newChannels = [...channels];
-        newChannels.splice(startIdx * ITEMS_PER_PAGE, data.length, ...data);
+        newChannels.splice(startIdx * pageSize, data.length, ...data);
         setChannels(newChannels);
       }
     } else {
@@ -76,13 +77,20 @@ const ChannelsTable = () => {
 
   const onPaginationChange = (e, { activePage }) => {
     (async () => {
-      if (activePage === Math.ceil(channels.length / ITEMS_PER_PAGE) + 1) {
+      if (activePage === Math.ceil(channels.length / pageSize) + 1) {
         // In this case we have to load more data and then append them.
-        await loadChannels(activePage - 1);
+        await loadChannels(activePage - 1, pageSize);
       }
       setActivePage(activePage);
     })();
   };
+
+  const setItemsPerPage = (e) => {
+    console.log(e.target.value);
+    //parseInt(e.target.value);
+    setPageSize(parseInt(e.target.value));
+    loadChannels(0);
+  }
 
   const refresh = async () => {
     setLoading(true);
@@ -135,7 +143,7 @@ const ChannelsTable = () => {
       showSuccess('操作成功完成！');
       let channel = res.data.data;
       let newChannels = [...channels];
-      let realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
+      let realIdx = (activePage - 1) * pageSize + idx;
       if (action === 'delete') {
         newChannels[realIdx].deleted = true;
       } else {
@@ -220,7 +228,7 @@ const ChannelsTable = () => {
     const { success, message, time } = res.data;
     if (success) {
       let newChannels = [...channels];
-      let realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
+      let realIdx = (activePage - 1) * pageSize + idx;
       newChannels[realIdx].response_time = time * 1000;
       newChannels[realIdx].test_time = Date.now() / 1000;
       setChannels(newChannels);
@@ -256,7 +264,7 @@ const ChannelsTable = () => {
     const { success, message, balance } = res.data;
     if (success) {
       let newChannels = [...channels];
-      let realIdx = (activePage - 1) * ITEMS_PER_PAGE + idx;
+      let realIdx = (activePage - 1) * pageSize + idx;
       newChannels[realIdx].balance = balance;
       newChannels[realIdx].balance_updated_time = Date.now() / 1000;
       setChannels(newChannels);
@@ -354,6 +362,7 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('group');
               }}
+              width={1}
             >
               分组
             </Table.HeaderCell>
@@ -382,6 +391,15 @@ const ChannelsTable = () => {
               响应时间
             </Table.HeaderCell>
             <Table.HeaderCell
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  sortChannel('used_quota');
+                }}
+                width={1}
+            >
+              已使用
+            </Table.HeaderCell>
+            <Table.HeaderCell
               style={{ cursor: 'pointer' }}
               onClick={() => {
                 sortChannel('balance');
@@ -404,8 +422,8 @@ const ChannelsTable = () => {
         <Table.Body>
           {channels
             .slice(
-              (activePage - 1) * ITEMS_PER_PAGE,
-              activePage * ITEMS_PER_PAGE
+              (activePage - 1) * pageSize,
+              activePage * pageSize
             )
             .map((channel, idx) => {
               if (channel.deleted) return <></>;
@@ -424,6 +442,7 @@ const ChannelsTable = () => {
                       basic
                     />
                   </Table.Cell>
+                  <Table.Cell>{renderQuota(channel.used_quota)}</Table.Cell>
                   <Table.Cell>
                     <Popup
                       trigger={<span onClick={() => {
@@ -519,7 +538,7 @@ const ChannelsTable = () => {
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan='9'>
+            <Table.HeaderCell colSpan='10'>
               <Button size='small' as={Link} to='/channel/add' loading={loading}>
                 添加新的渠道
               </Button>
@@ -528,6 +547,23 @@ const ChannelsTable = () => {
               </Button>
               <Button size='small' onClick={updateAllChannelsBalance}
                       loading={loading || updatingBalance}>更新所有已启用通道余额</Button>
+
+              <div style={{ float: 'right' }}>
+                <div className="ui labeled input" style={{marginRight: '10px'}}>
+                  <div className="ui label">每页数量</div>
+                  <Input type="number" style={{width: '70px'}} defaultValue={ITEMS_PER_PAGE} onBlur={setItemsPerPage}></Input>
+                </div>
+                <Pagination
+                    activePage={activePage}
+                    onPageChange={onPaginationChange}
+                    size='small'
+                    siblingRange={1}
+                    totalPages={
+                        Math.ceil(channels.length / pageSize) +
+                        (channels.length % pageSize === 0 ? 1 : 0)
+                    }
+                />
+              </div>
               <Popup
                 trigger={
                   <Button size='small' loading={loading}>
@@ -542,7 +578,7 @@ const ChannelsTable = () => {
                   确认删除
                 </Button>
               </Popup>
-              <Pagination
+              {/* <Pagination
                 floated='right'
                 activePage={activePage}
                 onPageChange={onPaginationChange}
@@ -552,8 +588,9 @@ const ChannelsTable = () => {
                   Math.ceil(channels.length / ITEMS_PER_PAGE) +
                   (channels.length % ITEMS_PER_PAGE === 0 ? 1 : 0)
                 }
-              />
+              /> */}
               <Button size='small' onClick={refresh} loading={loading}>刷新</Button>
+
             </Table.HeaderCell>
           </Table.Row>
         </Table.Footer>
