@@ -206,7 +206,7 @@ func Relay(c *gin.Context) {
 			if retryTimes == 1 {
 				channelId := c.GetInt("channel_id")
 				common.LogError(c.Request.Context(), fmt.Sprintf("relay error (channel #%d): %s", channelId, err.Message))
-				if shouldDisableChannel(&err.OpenAIError, err.StatusCode) {
+				if shouldDisableChannel(&err.OpenAIError, err.StatusCode) || strings.Contains(err.Message, "对于模型 gpt-4 无可用渠道") {
 					channelId := c.GetInt("channel_id")
 					channelName := c.GetString("channel_name")
 					disableChannelNoEmail(channelId, channelName)
