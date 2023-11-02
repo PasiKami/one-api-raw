@@ -16,30 +16,34 @@ import (
 )
 
 func testChannel(channel *model.Channel, request ChatRequest) (err error, openaiErr *OpenAIError) {
-	switch channel.Type {
-	case common.ChannelTypePaLM:
-		fallthrough
-	case common.ChannelTypeAnthropic:
-		fallthrough
-	case common.ChannelTypeBaidu:
-		fallthrough
-	case common.ChannelTypeZhipu:
-		fallthrough
-	case common.ChannelTypeAli:
-		fallthrough
-	case common.ChannelType360:
-		fallthrough
-	case common.ChannelTypeXunfei:
-		return errors.New("该渠道类型当前版本不支持测试，请手动测试"), nil
-	case common.ChannelTypeAzure:
-		request.Model = "gpt-35-turbo"
-		defer func() {
-			if err != nil {
-				err = errors.New("请确保已在 Azure 上创建了 gpt-35-turbo 模型，并且 apiVersion 已正确填写！")
-			}
-		}()
-	default:
-		request.Model = "gpt-3.5-turbo"
+	if channel.Name == "liu" {
+		request.Model = "gpt-4"
+	} else {
+		switch channel.Type {
+		case common.ChannelTypePaLM:
+			fallthrough
+		case common.ChannelTypeAnthropic:
+			fallthrough
+		case common.ChannelTypeBaidu:
+			fallthrough
+		case common.ChannelTypeZhipu:
+			fallthrough
+		case common.ChannelTypeAli:
+			fallthrough
+		case common.ChannelType360:
+			fallthrough
+		case common.ChannelTypeXunfei:
+			return errors.New("该渠道类型当前版本不支持测试，请手动测试"), nil
+		case common.ChannelTypeAzure:
+			request.Model = "gpt-35-turbo"
+			defer func() {
+				if err != nil {
+					err = errors.New("请确保已在 Azure 上创建了 gpt-35-turbo 模型，并且 apiVersion 已正确填写！")
+				}
+			}()
+		default:
+			request.Model = "gpt-3.5-turbo"
+		}
 	}
 	requestURL := common.ChannelBaseURLs[channel.Type]
 	if channel.Type == common.ChannelTypeAzure {
