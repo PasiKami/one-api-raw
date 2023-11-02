@@ -16,7 +16,7 @@ import (
 )
 
 func testChannel(channel *model.Channel, request ChatRequest) (err error, openaiErr *OpenAIError) {
-	if channel.Name == "liu" {
+	if strings.Contains(channel.Name, "liu") {
 		request.Model = "gpt-4"
 	} else {
 		switch channel.Type {
