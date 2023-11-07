@@ -126,7 +126,7 @@ func errorWrapper(err error, code string, statusCode int) *OpenAIErrorWithStatus
 	}
 }
 
-func shouldDisableChannel(err *OpenAIError, statusCode int) bool {
+func shouldDisableChannel2(err *OpenAIError, statusCode int) bool {
 	if !common.AutomaticDisableChannelEnabled {
 		return false
 	}
@@ -134,6 +134,22 @@ func shouldDisableChannel(err *OpenAIError, statusCode int) bool {
 		return false
 	}
 	if statusCode == http.StatusUnauthorized || statusCode == http.StatusTemporaryRedirect {
+		return true
+	}
+	if err.Type == "insufficient_quota" || err.Code == "invalid_api_key" || err.Code == "account_deactivated" {
+		return true
+	}
+	return false
+}
+
+func shouldDisableChannel(err *OpenAIError, statusCode int) bool {
+	if !common.AutomaticDisableChannelEnabled {
+		return false
+	}
+	if err == nil {
+		return false
+	}
+	if statusCode == http.StatusUnauthorized {
 		return true
 	}
 	if err.Type == "insufficient_quota" || err.Code == "invalid_api_key" || err.Code == "account_deactivated" {
