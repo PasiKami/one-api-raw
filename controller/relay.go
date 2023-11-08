@@ -214,7 +214,7 @@ func Relay(c *gin.Context) {
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 					// enableChannel(channelId, channelName)
 				} else {
-					c.Redirect(http.StatusTemporaryRedsirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
+					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 				}
 		} else {
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
