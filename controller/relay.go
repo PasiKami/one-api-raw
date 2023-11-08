@@ -209,7 +209,8 @@ func Relay(c *gin.Context) {
 				if shouldDisableChannel2(&err.OpenAIError, err.StatusCode) || strings.Contains(err.Message, "对于模型 gpt-4 无可用渠道") {
 					channelId := c.GetInt("channel_id")
 					channelName := c.GetString("channel_name")
-					disableChannelNoEmail(channelId, channelName)
+					// disableChannelNoEmail(channelId, channelName)
+					disableChannel(channelId, channelName, err.Message)
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 					// enableChannel(channelId, channelName)
 				} else {
