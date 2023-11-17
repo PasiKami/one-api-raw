@@ -9,9 +9,9 @@ import (
 	"one-api/common"
 	"one-api/model"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,6 +55,8 @@ func testChannel(channel *model.Channel, request ChatRequest) (err error, openai
 		}
 		requestURL += "/v1/chat/completions"
 	}
+	// for Cloudflare AI gateway: https://github.com/songquanpeng/one-api/pull/639
+	requestURL = strings.Replace(requestURL, "/v1/v1", "/v1", 1)
 
 	jsonData, err := json.Marshal(request)
 	if err != nil {
@@ -154,21 +156,6 @@ func disableChannel(channelId int, channelName string, reason string) {
 	if err != nil {
 		common.SysError(fmt.Sprintf("failed to send email: %s", err.Error()))
 	}
-}
-// disable & notify
-func disableChannelNoEmail(channelId int, channelName string) {
-	if common.RootUserEmail == "" {
-		common.RootUserEmail = model.GetRootUserEmail()
-	}
-	model.UpdateChannelStatusById(channelId, common.ChannelStatusAutoDisabled)
-}
-
-// enable
-func enableChannel(channelId int, channelName string) {
-	if common.RootUserEmail == "" {
-		common.RootUserEmail = model.GetRootUserEmail()
-	}
-	model.UpdateChannelStatusById(channelId, common.ChannelStatusEnabled)
 }
 
 func testAllChannels(notify bool) error {
