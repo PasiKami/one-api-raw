@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { API, setPromptShown, shouldShowPrompt, showError, showInfo, showSuccess, timestamp2string } from '../helpers';
 
 import { CHANNEL_OPTIONS, ITEMS_PER_PAGE } from '../constants';
-import { renderGroup, renderNumber } from '../helpers/render';
+import {renderGroup, renderNumber, renderQuota} from '../helpers/render';
 
 function renderTimestamp(timestamp) {
   return (
@@ -380,6 +380,15 @@ const ChannelsTable = () => {
             >
               响应时间
             </Table.HeaderCell>
+<Table.HeaderCell
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  sortChannel('used_quota');
+                }}
+                width={1}
+            >
+              已使用
+            </Table.HeaderCell>
             <Table.HeaderCell
               style={{ cursor: 'pointer' }}
               onClick={() => {
@@ -423,6 +432,7 @@ const ChannelsTable = () => {
                       basic
                     />
                   </Table.Cell>
+<Table.Cell>{renderQuota(channel.used_quota)}</Table.Cell>
                   <Table.Cell>
                     <Popup
                       trigger={<span onClick={() => {
