@@ -353,6 +353,7 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('group');
               }}
+width={1}
             >
               分组
             </Table.HeaderCell>
