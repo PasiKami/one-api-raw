@@ -345,8 +345,7 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('name');
               }}
-              width={1}
-            >
+                          >
               名称
             </Table.HeaderCell>
             <Table.HeaderCell
@@ -363,8 +362,7 @@ width={1}
               onClick={() => {
                 sortChannel('type');
               }}
-              width={1}
-            >
+                          >
               类型
             </Table.HeaderCell>
             <Table.HeaderCell
@@ -372,8 +370,7 @@ width={1}
               onClick={() => {
                 sortChannel('status');
               }}
-              width={1}
-            >
+                          >
               状态
             </Table.HeaderCell>
             <Table.HeaderCell
@@ -381,8 +378,7 @@ width={1}
               onClick={() => {
                 sortChannel('response_time');
               }}
-              width={1}
-            >
+                          >
               响应时间
             </Table.HeaderCell>
 <Table.HeaderCell
