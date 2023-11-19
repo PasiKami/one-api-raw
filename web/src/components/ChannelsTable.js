@@ -381,6 +381,7 @@ width={1}
               onClick={() => {
                 sortChannel('response_time');
               }}
+              width={1}
             >
               响应时间
             </Table.HeaderCell>
@@ -532,7 +533,7 @@ width={1}
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan='9'>
+            <Table.HeaderCell colSpan='10'>
               <Button size='small' as={Link} to='/channel/add' loading={loading}>
                 添加新的渠道
               </Button>
