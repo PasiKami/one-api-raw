@@ -12,8 +12,47 @@ import (
 
 type Message struct {
 	Role    string  `json:"role"`
-	Content string  `json:"content"`
+	Content any     `json:"content"`
 	Name    *string `json:"name,omitempty"`
+}
+
+type ImageURL struct {
+	Url    string `json:"url,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
+
+type TextContent struct {
+	Type string `json:"type,omitempty"`
+	Text string `json:"text,omitempty"`
+}
+
+type ImageContent struct {
+	Type     string    `json:"type,omitempty"`
+	ImageURL *ImageURL `json:"image_url,omitempty"`
+}
+
+func (m Message) StringContent() string {
+	content, ok := m.Content.(string)
+	if ok {
+		return content
+	}
+	contentList, ok := m.Content.([]any)
+	if ok {
+		var contentStr string
+		for _, contentItem := range contentList {
+			contentMap, ok := contentItem.(map[string]any)
+			if !ok {
+				continue
+			}
+			if contentMap["type"] == "text" {
+				if subStr, ok := contentMap["text"].(string); ok {
+					contentStr += subStr
+				}
+			}
+		}
+		return contentStr
+	}
+	return ""
 }
 
 const (
@@ -31,19 +70,30 @@ const (
 
 // https://platform.openai.com/docs/api-reference/chat
 
+type ResponseFormat struct {
+	Type string `json:"type,omitempty"`
+}
+
 type GeneralOpenAIRequest struct {
-	Model       string    `json:"model,omitempty"`
-	Messages    []Message `json:"messages,omitempty"`
-	Prompt      any       `json:"prompt,omitempty"`
-	Stream      bool      `json:"stream,omitempty"`
-	MaxTokens   int       `json:"max_tokens,omitempty"`
-	Temperature float64   `json:"temperature,omitempty"`
-	TopP        float64   `json:"top_p,omitempty"`
-	N           int       `json:"n,omitempty"`
-	Input       any       `json:"input,omitempty"`
-	Instruction string    `json:"instruction,omitempty"`
-	Size        string    `json:"size,omitempty"`
-	Functions   any       `json:"functions,omitempty"`
+	Model            string          `json:"model,omitempty"`
+	Messages         []Message       `json:"messages,omitempty"`
+	Prompt           any             `json:"prompt,omitempty"`
+	Stream           bool            `json:"stream,omitempty"`
+	MaxTokens        int             `json:"max_tokens,omitempty"`
+	Temperature      float64         `json:"temperature,omitempty"`
+	TopP             float64         `json:"top_p,omitempty"`
+	N                int             `json:"n,omitempty"`
+	Input            any             `json:"input,omitempty"`
+	Instruction      string          `json:"instruction,omitempty"`
+	Size             string          `json:"size,omitempty"`
+	Functions        any             `json:"functions,omitempty"`
+	FrequencyPenalty float64         `json:"frequency_penalty,omitempty"`
+	PresencePenalty  float64         `json:"presence_penalty,omitempty"`
+	ResponseFormat   *ResponseFormat `json:"response_format,omitempty"`
+	Seed             float64         `json:"seed,omitempty"`
+	Tools            any             `json:"tools,omitempty"`
+	ToolChoice       any             `json:"tool_choice,omitempty"`
+	User             string          `json:"user,omitempty"`
 }
 
 func (r GeneralOpenAIRequest) ParseInput() []string {
@@ -154,25 +204,11 @@ type OpenAIEmbeddingResponse struct {
 	Usage  `json:"usage"`
 }
 
-type OpenAIImageResponse struct {
+type ImageResponse struct {
 	Created int `json:"created"`
 	Data    []struct {
 		Url string `json:"url"`
-	} `json:"data"`
-}
-
-type AzureDalle2ResultData struct {
-	Data []struct {
-		Url string `json:"url"`
 	}
-}
-
-type AzureDalle2Response struct {
-	Created int                   `json:"created"`
-	Expires int                   `json:"expires"`
-	ID      string                `json:"id"`
-	Result  AzureDalle2ResultData `json:"result"`
-	Status  string                `json:"status"`
 }
 
 type ChatCompletionsStreamResponseChoice struct {
@@ -215,9 +251,9 @@ func Relay(c *gin.Context) {
 		relayMode = RelayModeEdits
 	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/speech") {
 		relayMode = RelayModeAudioSpeech
-	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/transcription") {
+	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/transcriptions") {
 		relayMode = RelayModeAudioTranscription
-	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/translation") {
+	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/translations") {
 		relayMode = RelayModeAudioTranslation
 	}
 	var err *OpenAIErrorWithStatusCode
@@ -241,7 +277,7 @@ func Relay(c *gin.Context) {
 			retryTimes = common.RetryTimes
 		}
 		if retryTimes > 0 {
-			if retryTimes == 2 {
+if retryTimes == 2 {
 				channelId := c.GetInt("channel_id")
 				common.LogError(c.Request.Context(), fmt.Sprintf("relay error (channel #%d): %s", channelId, err.Message))
 				if shouldDisableChannel2(&err.OpenAIError, err.StatusCode) || strings.Contains(err.Message, "对于模型 gpt-4 无可用渠道") {
@@ -255,8 +291,8 @@ func Relay(c *gin.Context) {
 					c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
 				}
 			} else {
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
-			}
+			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
+}
 		} else {
 			if err.StatusCode == http.StatusTooManyRequests {
 				err.OpenAIError.Message = "当前分组上游负载已饱和，请稍后再试"
