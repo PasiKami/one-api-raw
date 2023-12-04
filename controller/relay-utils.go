@@ -129,22 +129,6 @@ func errorWrapper(err error, code string, statusCode int) *OpenAIErrorWithStatus
 	}
 }
 
-func shouldDisableChannel2(err *OpenAIError, statusCode int) bool {
-	if !common.AutomaticDisableChannelEnabled {
-		return false
-	}
-	if err == nil {
-		return false
-	}
-	if statusCode == http.StatusUnauthorized || statusCode == http.StatusTemporaryRedirect {
-		return true
-	}
-	if err.Type == "insufficient_quota" || err.Code == "invalid_api_key" || err.Code == "account_deactivated" {
-		return true
-	}
-	return false
-}
-
 func shouldDisableChannel(err *OpenAIError, statusCode int) bool {
 	if !common.AutomaticDisableChannelEnabled {
 		return false
@@ -159,6 +143,19 @@ func shouldDisableChannel(err *OpenAIError, statusCode int) bool {
 		return true
 	}
 	return false
+}
+
+func shouldEnableChannel(err error, openAIErr *OpenAIError) bool {
+	if !common.AutomaticEnableChannelEnabled {
+		return false
+	}
+	if err != nil {
+		return false
+	}
+	if openAIErr != nil {
+		return false
+	}
+	return true
 }
 
 func setEventStreamHeaders(c *gin.Context) {
@@ -207,7 +204,6 @@ func getFullRequestURL(baseURL string, requestURL string, channelType int) strin
 			fullRequestURL = fmt.Sprintf("%s%s", baseURL, strings.TrimPrefix(requestURL, "/openai/deployments"))
 		}
 	}
-
 	return fullRequestURL
 }
 
@@ -231,4 +227,13 @@ func postConsumeQuota(ctx context.Context, tokenId int, quotaDelta int, totalQuo
 	if totalQuota <= 0 {
 		common.LogError(ctx, fmt.Sprintf("totalQuota consumed is %d, something is wrong", totalQuota))
 	}
+}
+
+func GetAPIVersion(c *gin.Context) string {
+	query := c.Request.URL.Query()
+	apiVersion := query.Get("api-version")
+	if apiVersion == "" {
+		apiVersion = c.GetString("api_version")
+	}
+	return apiVersion
 }

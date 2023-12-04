@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { API, setPromptShown, shouldShowPrompt, showError, showInfo, showSuccess, timestamp2string } from '../helpers';
 
 import { CHANNEL_OPTIONS, ITEMS_PER_PAGE } from '../constants';
-import {renderGroup, renderNumber, renderQuota} from '../helpers/render';
+import { renderGroup, renderNumber } from '../helpers/render';
 
 function renderTimestamp(timestamp) {
   return (
@@ -234,7 +234,7 @@ const ChannelsTable = () => {
     const res = await API.get(`/api/channel/test`);
     const { success, message } = res.data;
     if (success) {
-      showInfo('已成功开始测试所有已启用通道，请刷新页面查看结果。');
+      showInfo('已成功开始测试所有通道，请刷新页面查看结果。');
     } else {
       showError(message);
     }
@@ -353,7 +353,6 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('group');
               }}
-width={1}
             >
               分组
             </Table.HeaderCell>
@@ -381,7 +380,7 @@ width={1}
             >
               响应时间
             </Table.HeaderCell>
-            <Table.HeaderCell
+<Table.HeaderCell
               style={{ cursor: 'pointer' }}
               onClick={() => {
 sortChannel('used_quota');
