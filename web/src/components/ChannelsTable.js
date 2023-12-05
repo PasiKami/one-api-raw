@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { API, setPromptShown, shouldShowPrompt, showError, showInfo, showSuccess, timestamp2string } from '../helpers';
 
 import { CHANNEL_OPTIONS, ITEMS_PER_PAGE } from '../constants';
-import {renderGroup, renderNumber, renderQuota} from '../helpers/render';
+import { renderGroup, renderNumber } from '../helpers/render';
 
 function renderTimestamp(timestamp) {
   return (
@@ -234,7 +234,7 @@ const ChannelsTable = () => {
     const res = await API.get(`/api/channel/test`);
     const { success, message } = res.data;
     if (success) {
-      showInfo('已成功开始测试所有已启用通道，请刷新页面查看结果。');
+      showInfo('已成功开始测试所有通道，请刷新页面查看结果。');
     } else {
       showError(message);
     }
@@ -345,7 +345,7 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('name');
               }}
-                          >
+            >
               名称
             </Table.HeaderCell>
             <Table.HeaderCell
@@ -353,7 +353,6 @@ const ChannelsTable = () => {
               onClick={() => {
                 sortChannel('group');
               }}
-width={1}
             >
               分组
             </Table.HeaderCell>
@@ -362,7 +361,7 @@ width={1}
               onClick={() => {
                 sortChannel('type');
               }}
-                          >
+            >
               类型
             </Table.HeaderCell>
             <Table.HeaderCell
@@ -370,7 +369,7 @@ width={1}
               onClick={() => {
                 sortChannel('status');
               }}
-                          >
+            >
               状态
             </Table.HeaderCell>
             <Table.HeaderCell
@@ -378,17 +377,8 @@ width={1}
               onClick={() => {
                 sortChannel('response_time');
               }}
-                          >
-              响应时间
-            </Table.HeaderCell>
-<Table.HeaderCell
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  sortChannel('used_quota');
-                }}
-                width={1}
             >
-              已使用
+              响应时间
             </Table.HeaderCell>
             <Table.HeaderCell
               style={{ cursor: 'pointer' }}
@@ -433,7 +423,6 @@ width={1}
                       basic
                     />
                   </Table.Cell>
-<Table.Cell>{renderQuota(channel.used_quota)}</Table.Cell>
                   <Table.Cell>
                     <Popup
                       trigger={<span onClick={() => {
@@ -529,7 +518,7 @@ width={1}
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan='10'>
+            <Table.HeaderCell colSpan='9'>
               <Button size='small' as={Link} to='/channel/add' loading={loading}>
                 添加新的渠道
               </Button>
