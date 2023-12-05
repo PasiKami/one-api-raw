@@ -380,15 +380,6 @@ const ChannelsTable = () => {
             >
               响应时间
             </Table.HeaderCell>
-<Table.HeaderCell
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-sortChannel('used_quota');
-                }}
-                width={1}
-            >
-              已使用
-            </Table.HeaderCell>
             <Table.HeaderCell
               style={{ cursor: 'pointer' }}
               onClick={() => {
@@ -432,7 +423,6 @@ sortChannel('used_quota');
                       basic
                     />
                   </Table.Cell>
-<Table.Cell>{renderQuota(channel.used_quota)}</Table.Cell>
                   <Table.Cell>
                     <Popup
                       trigger={<span onClick={() => {
@@ -528,7 +518,7 @@ sortChannel('used_quota');
 
         <Table.Footer>
           <Table.Row>
-            <Table.HeaderCell colSpan='10'>
+            <Table.HeaderCell colSpan='9'>
               <Button size='small' as={Link} to='/channel/add' loading={loading}>
                 添加新的渠道
               </Button>
