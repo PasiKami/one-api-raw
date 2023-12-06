@@ -16,13 +16,13 @@ const OperationSetting = () => {
     ChatLink: '',
     QuotaPerUnit: 0,
     AutomaticDisableChannelEnabled: '',
-    AutomaticEnableChannelEnabled: '',
     ChannelDisableThreshold: 0,
     LogConsumeEnabled: '',
     DisplayInCurrencyEnabled: '',
     DisplayTokenStatEnabled: '',
     ApproximateTokenEnabled: '',
-    RetryTimes: 0
+    RetryTimes: 0,
+    RetryInterval: 0,
   });
   const [originInputs, setOriginInputs] = useState({});
   let [loading, setLoading] = useState(false);
@@ -129,6 +129,9 @@ const OperationSetting = () => {
         if (originInputs['RetryTimes'] !== inputs.RetryTimes) {
           await updateOption('RetryTimes', inputs.RetryTimes);
         }
+        if (originInputs['RetryInterval'] !== inputs.RetryInterval) {
+          await updateOption('RetryInterval', inputs.RetryInterval);
+        }
         break;
     }
   };
@@ -191,6 +194,19 @@ const OperationSetting = () => {
               value={inputs.RetryTimes}
               placeholder='失败重试次数'
             />
+
+            <Form.Input
+                label='失败重试间隔(毫秒)'
+                name='RetryInterval'
+                type={'number'}
+                step='1'
+                min='0'
+                onChange={handleInputChange}
+                autoComplete='new-password'
+                value={inputs.RetryInterval}
+                placeholder='失败重试间隔'
+            />
+
           </Form.Group>
           <Form.Group inline>
             <Form.Checkbox
@@ -269,12 +285,6 @@ const OperationSetting = () => {
               label='失败时自动禁用通道'
               name='AutomaticDisableChannelEnabled'
               onChange={handleInputChange}
-            />
-            <Form.Checkbox
-                checked={inputs.AutomaticEnableChannelEnabled === 'true'}
-                label='成功时自动启用通道'
-                name='AutomaticEnableChannelEnabled'
-                onChange={handleInputChange}
             />
           </Form.Group>
           <Form.Button onClick={() => {
