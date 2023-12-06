@@ -34,15 +34,12 @@ func relayImageHelper(c *gin.Context, relayMode int) *OpenAIErrorWithStatusCode 
 	channelType := c.GetInt("channel")
 	channelId := c.GetInt("channel_id")
 	userId := c.GetInt("id")
-	consumeQuota := c.GetBool("consume_quota")
 	group := c.GetString("group")
 
 	var imageRequest ImageRequest
-	if consumeQuota {
-		err := common.UnmarshalBodyReusable(c, &imageRequest)
-		if err != nil {
-			return errorWrapper(err, "bind_request_body_failed", http.StatusBadRequest)
-		}
+	err := common.UnmarshalBodyReusable(c, &imageRequest)
+	if err != nil {
+		return errorWrapper(err, "bind_request_body_failed", http.StatusBadRequest)
 	}
 
 	// Size validation
@@ -105,9 +102,15 @@ func relayImageHelper(c *gin.Context, relayMode int) *OpenAIErrorWithStatusCode 
 		baseURL = c.GetString("base_url")
 	}
 	fullRequestURL := getFullRequestURL(baseURL, requestURL, channelType)
+	if channelType == common.ChannelTypeAzure && relayMode == RelayModeImagesGenerations {
+		// https://learn.microsoft.com/en-us/azure/ai-services/openai/dall-e-quickstart?tabs=dalle3%2Ccommand-line&pivots=rest-api
+		apiVersion := GetAPIVersion(c)
+		// https://{resource_name}.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2023-06-01-preview
+		fullRequestURL = fmt.Sprintf("%s/openai/deployments/%s/images/generations?api-version=%s", baseURL, imageModel, apiVersion)
+	}
 
 	var requestBody io.Reader
-	if isModelMapped {
+	if isModelMapped || channelType == common.ChannelTypeAzure { // make Azure channel request body
 		jsonStr, err := json.Marshal(imageRequest)
 		if err != nil {
 			return errorWrapper(err, "marshal_text_request_failed", http.StatusInternalServerError)
@@ -124,40 +127,20 @@ func relayImageHelper(c *gin.Context, relayMode int) *OpenAIErrorWithStatusCode 
 
 	quota := int(ratio*imageCostRatio*1000) * imageRequest.N
 
-	if consumeQuota && userQuota-quota < 0 {
+	if userQuota-quota < 0 {
 		return errorWrapper(errors.New("user quota is not enough"), "insufficient_user_quota", http.StatusForbidden)
 	}
 
 	req, err := http.NewRequest(c.Request.Method, fullRequestURL, requestBody)
-
-	if channelType == common.ChannelTypeAzure {
-		query := c.Request.URL.Query()
-		apiVersion := query.Get("api-version")
-		if apiVersion == "" {
-			apiVersion = c.GetString("api_version")
-		}
-
-		params := fmt.Sprintf("?api-version=%s", apiVersion)
-		baseURL = c.GetString("base_url")
-
-		if imageModel == "dall-e-2" {
-			fullRequestURL = fmt.Sprintf("%s/openai/images/generations:submit%s", baseURL, params)
-		} else {
-			fullRequestURL = fmt.Sprintf("%s/openai/deployments/dalle3/images/generations%s", baseURL, params)
-		}
-
-		req, err = http.NewRequest(c.Request.Method, fullRequestURL, requestBody)
-
-		apiKey := c.Request.Header.Get("Authorization")
-		apiKey = strings.TrimPrefix(apiKey, "Bearer ")
-
-		req.Header.Set("api-key", apiKey)
-	} else {
-		req.Header.Set("Authorization", c.Request.Header.Get("Authorization"))
-	}
-
 	if err != nil {
 		return errorWrapper(err, "new_request_failed", http.StatusInternalServerError)
+	}
+	token := c.Request.Header.Get("Authorization")
+	if channelType == common.ChannelTypeAzure { // Azure authentication
+		token = strings.TrimPrefix(token, "Bearer ")
+		req.Header.Set("api-key", token)
+	} else {
+		req.Header.Set("Authorization", token)
 	}
 
 	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
@@ -176,77 +159,47 @@ func relayImageHelper(c *gin.Context, relayMode int) *OpenAIErrorWithStatusCode 
 	if err != nil {
 		return errorWrapper(err, "close_request_body_failed", http.StatusInternalServerError)
 	}
-
-	var textResponse OpenAIImageResponse
-
-	contentLength := resp.ContentLength
-
-	if consumeQuota {
-		responseBody, err := io.ReadAll(resp.Body)
-
-		if err != nil {
-			return errorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
-		}
-		err = resp.Body.Close()
-		if err != nil {
-			return errorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
-		}
-
-		if channelType == common.ChannelTypeAzure && imageModel == "dall-e-2" {
-			var azureDalle2Response AzureDalle2Response
-			err = json.Unmarshal(responseBody, &azureDalle2Response)
-
-			if err != nil {
-				return errorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
-			}
-
-			// Rerite response body
-			textResponse = OpenAIImageResponse{
-				Created: azureDalle2Response.Created,
-				Data:    azureDalle2Response.Result.Data,
-			}
-
-			responseBody, err = json.Marshal(textResponse)
-
-			// Fix transfer closed with ... bytes remaining to read
-			contentLength = int64(len(responseBody))
-		} else {
-			err = json.Unmarshal(responseBody, &textResponse)
-		}
-
-		if err != nil {
-			return errorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
-		}
-
-		resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
-	}
+	var textResponse ImageResponse
 
 	defer func(ctx context.Context) {
-		if consumeQuota {
-			err := model.PostConsumeTokenQuota(tokenId, quota)
-			if err != nil {
-				common.SysError("error consuming token remain quota: " + err.Error())
-			}
-			err = model.CacheUpdateUserQuota(userId)
-			if err != nil {
-				common.SysError("error update user quota cache: " + err.Error())
-			}
-			if quota != 0 {
-				tokenName := c.GetString("token_name")
-				logContent := fmt.Sprintf("模型倍率 %.2f，分组倍率 %.2f", modelRatio, groupRatio)
-				model.RecordConsumeLog(ctx, userId, channelId, 0, 0, imageModel, tokenName, quota, logContent)
-				model.UpdateUserUsedQuotaAndRequestCount(userId, quota)
-				channelId := c.GetInt("channel_id")
-				model.UpdateChannelUsedQuota(channelId, quota)
-			}
+		err := model.PostConsumeTokenQuota(tokenId, quota)
+		if err != nil {
+			common.SysError("error consuming token remain quota: " + err.Error())
+		}
+		err = model.CacheUpdateUserQuota(userId)
+		if err != nil {
+			common.SysError("error update user quota cache: " + err.Error())
+		}
+		if quota != 0 {
+			tokenName := c.GetString("token_name")
+			logContent := fmt.Sprintf("模型倍率 %.2f，分组倍率 %.2f", modelRatio, groupRatio)
+			model.RecordConsumeLog(ctx, userId, channelId, 0, 0, imageModel, tokenName, quota, logContent)
+			model.UpdateUserUsedQuotaAndRequestCount(userId, quota)
+			channelId := c.GetInt("channel_id")
+			model.UpdateChannelUsedQuota(channelId, quota)
 		}
 	}(c.Request.Context())
+
+	responseBody, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return errorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return errorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
+	}
+	err = json.Unmarshal(responseBody, &textResponse)
+	if err != nil {
+		return errorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
+	}
+
+	resp.Body = io.NopCloser(bytes.NewBuffer(responseBody))
 
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])
 	}
 	c.Writer.WriteHeader(resp.StatusCode)
-	c.Writer.Header().Set("Content-Length", fmt.Sprintf("%d", contentLength))
 
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
