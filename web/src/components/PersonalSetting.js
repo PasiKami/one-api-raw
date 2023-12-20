@@ -98,23 +98,23 @@ const PersonalSetting = () => {
   };
 
   const deleteAccount = async () => {
-    if (inputs.self_account_deletion_confirmation !== userState.user.username) {
-      showError('请输入你的账户名以确认删除！');
-      return;
-    }
+    // if (inputs.self_account_deletion_confirmation !== userState.user.username) {
+    //   showError('请输入你的账户名以确认删除！');
+    //   return;
+    // }
+    showError('个人用户禁止删除, 如有需要请联系管理员删除！');
+    // const res = await API.delete('/api/user/self');
+    // const { success, message } = res.data;
 
-    const res = await API.delete('/api/user/self');
-    const { success, message } = res.data;
-
-    if (success) {
-      showSuccess('账户已删除！');
-      await API.get('/api/user/logout');
-      userDispatch({ type: 'logout' });
-      localStorage.removeItem('user');
-      navigate('/login');
-    } else {
-      showError(message);
-    }
+    // if (success) {
+    //   showSuccess('账户已删除！');
+    //   await API.get('/api/user/logout');
+    //   userDispatch({ type: 'logout' });
+    //   localStorage.removeItem('user');
+    //   navigate('/login');
+    // } else {
+    //   showError(message);
+    // }
   };
 
   const bindWeChat = async () => {
