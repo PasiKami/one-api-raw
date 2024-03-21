@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"one-api/common"
@@ -13,6 +12,8 @@ import (
 	"one-api/service"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 func Relay(c *gin.Context) {
@@ -36,6 +37,9 @@ func Relay(c *gin.Context) {
 		retryTimes, _ := strconv.Atoi(retryTimesStr)
 		if retryTimesStr == "" {
 			retryTimes = common.RetryTimes
+		}
+		if common.NoRetryRegex.MatchString(err.Error.Message) {
+			retryTimes = 0 // 如果匹配到不需要重试的错误消息，设置retryTimes为0
 		}
 		if retryTimes > 0 {
 			c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("%s?retry=%d", c.Request.URL.Path, retryTimes-1))
