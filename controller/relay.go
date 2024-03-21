@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"one-api/common"
@@ -31,6 +33,15 @@ func Relay(c *gin.Context) {
 	default:
 		err = relay.TextHelper(c)
 	}
+	// 读取请求体
+	bodyBytes, _ := io.ReadAll(c.Request.Body)
+	// 请求体读取后需要重新设置回去，因为在gin中请求体只能读取一次
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	// 将请求体转换为字符串
+	requestBody := string(bodyBytes)
+
+	// 打印请求体
+	fmt.Printf("Request Body: %s\n", requestBody)
 	if err != nil {
 		requestId := c.GetString(common.RequestIdKey)
 		retryTimesStr := c.Query("retry")
@@ -38,10 +49,18 @@ func Relay(c *gin.Context) {
 		if retryTimesStr == "" {
 			retryTimes = common.RetryTimes
 		}
-		fmt.Println(c.Request.Body)
+
 		if retryTimes >= 3 {
 			if common.NoRetryRegex.MatchString(err.Error.Message) {
-				fmt.Println(c.Request.Body)
+				// 读取请求体
+				bodyBytes, _ := io.ReadAll(c.Request.Body)
+				// 请求体读取后需要重新设置回去，因为在gin中请求体只能读取一次
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+				// 将请求体转换为字符串
+				requestBody := string(bodyBytes)
+
+				// 打印请求体
+				fmt.Printf("Request Body: %s\n", requestBody)
 				retryTimes = 0 // 如果匹配到不需要重试的错误消息，设置retryTimes为0
 			}
 		}
