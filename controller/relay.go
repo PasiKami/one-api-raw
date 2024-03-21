@@ -38,9 +38,10 @@ func Relay(c *gin.Context) {
 		if retryTimesStr == "" {
 			retryTimes = common.RetryTimes
 		}
-		if retryTimes >= 4 {
+		fmt.Println(c.Request.Body)
+		if retryTimes >= 3 {
 			if common.NoRetryRegex.MatchString(err.Error.Message) {
-				fmt.Println("relay error happen, won't retry in this case")
+				fmt.Println(c.Request.Body)
 				retryTimes = 0 // 如果匹配到不需要重试的错误消息，设置retryTimes为0
 			}
 		}
