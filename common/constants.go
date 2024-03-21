@@ -121,7 +121,7 @@ var RelayTimeout = GetOrDefault("RELAY_TIMEOUT", 0) // unit is second
 var GeminiSafetySetting = GetOrDefaultString("GEMINI_SAFETY_SETTING", "BLOCK_NONE")
 
 // 编译正则表达式并缓存
-var NoRetryRegex = regexp.MustCompile(`(maximum context length is \d+ tokens)|(rejected as a result of our safety system)|(blocked by our content filters)|(Invalid content type)`)
+var NoRetryRegex = regexp.MustCompile(`(maximum context length is \d+ tokens)|(rejected as a result of our safety system)|(blocked by our content filters)|(Invalid content type)|(does not work with the specified model)`)
 
 const (
 	RequestIdKey = "X-Oneapi-Request-Id"
