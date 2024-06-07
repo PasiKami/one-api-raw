@@ -127,7 +127,8 @@ func shouldRetry(c *gin.Context, channelId int, openaiErr *dto.OpenAIErrorWithSt
 
 func processChannelError(c *gin.Context, channelId int, err *dto.OpenAIErrorWithStatusCode) {
 	autoBan := c.GetBool("auto_ban")
-	common.LogError(c.Request.Context(), fmt.Sprintf("relay error (channel #%d, status code: %d): %s", channelId, err.StatusCode, err.Error.Message))
+	originalModel := c.GetString("original_model")
+	common.LogError(c.Request.Context(), fmt.Sprintf("relay error (channel #%d, status code: %d, model: %s): %s", channelId, err.StatusCode, originalModel, err.Error.Message))
 	if service.ShouldDisableChannel(&err.Error, err.StatusCode) && autoBan {
 		channelName := c.GetString("channel_name")
 		service.DisableChannel(channelId, channelName, err.Error.Message)
