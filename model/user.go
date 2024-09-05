@@ -428,6 +428,7 @@ func ValidateAccessToken(token string) (user *User) {
 }
 
 func GetUserQuota(id int) (quota int, err error) {
+	common.SysLog("请求数据中quota!")
 	err = DB.Model(&User{}).Where("id = ?", id).Select("quota").Find(&quota).Error
 	if err != nil {
 		if common.RedisEnabled {

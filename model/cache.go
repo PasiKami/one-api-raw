@@ -139,13 +139,13 @@ func CacheGetUsername(id int) (username string, err error) {
 
 func CacheGetUserQuota(id int) (quota int, err error) {
 	if !common.RedisEnabled {
-		common.LogInfo("缓存请求数据库Quota1!")
+		common.SysLog("缓存请求数据库Quota1!")
 		return GetUserQuota(id)
 	}
-	common.LogInfo("缓存请求Quota!")
+	common.SysLog("缓存请求Quota!")
 	quotaString, err := common.RedisGet(fmt.Sprintf("user_quota:%d", id))
 	if err != nil {
-		common.LogInfo("缓存请求数据库Quota2!" + err.Error())
+		common.SysLog("缓存请求数据库Quota2!" + err.Error())
 		quota, err = GetUserQuota(id)
 		if err != nil {
 			return 0, err
@@ -164,7 +164,6 @@ func CacheUpdateUserQuota(id int) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	common.LogInfo("缓存更新请求数据库Quota3!")
 	quota, err := GetUserQuota(id)
 	if err != nil {
 		return err
