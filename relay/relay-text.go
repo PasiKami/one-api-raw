@@ -265,7 +265,9 @@ func preConsumeQuota(c *gin.Context, preConsumedQuota int, relayInfo *relaycommo
 			common.LogInfo(c, fmt.Sprintf("user %d with unlimited token has enough quota %d, trusted and no need to pre-consume", relayInfo.UserId, userQuota))
 		}
 	}
+	common.LogInfo(c, fmt.Sprintf("最终预扣费: %d", preConsumedQuota))
 	if preConsumedQuota > 0 {
+		common.LogInfo(c, fmt.Sprintf("请求数据库"))
 		userQuota, err = model.PreConsumeTokenQuota(relayInfo.TokenId, preConsumedQuota)
 		if err != nil {
 			return 0, 0, service.OpenAIErrorWrapperLocal(err, "pre_consume_token_quota_failed", http.StatusForbidden)
